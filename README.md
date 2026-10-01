@@ -29,6 +29,7 @@ hand.
 | `sop-files/project1/phase3-custom-rule/sql-built-by-interpolation.yaml` | 3.1 | The custom Semgrep rule. Matches the *construction* of a SQL statement by interpolation or concatenation, then constrains it to SQL with a keyword check scoped to the matched range. It never names `documents`, `search` or `pool.query`, which is what lets it generalise past the one seeded line. |
 | `sop-files/project1/phase3-custom-rule/generalization-cases.js` | 3.3 | Nine functions: five SQL injections in shapes that appear nowhere in DocuTrust, and four safe forms that must not be reported. The rule's evaluation criterion is whether it catches all five and none of the four. |
 | `sop-files/project1/phase3-custom-rule/source-dependency.js` | 3.4 | Two structurally identical injections differing only in where the value comes from. Run against `p/expressjs` it yields one finding; against the custom rule, two. This is the demonstration that the custom rule is not a duplicate of the registry rule. |
+| `sop-files/project1/phase4-secrets-scan/.gitleaks.toml` | 4.2 | Gitleaks configuration. Extends the default ruleset rather than replacing it, and adds one rule for AWS key IDs ending in `EXAMPLE` — the shape Gitleaks' built-in `aws-access-token` rule allowlists, and which this repository deliberately contains. Without it a default scan of DocuTrust reports nothing at all. |
 
 ## Why these are separate from the repository
 
