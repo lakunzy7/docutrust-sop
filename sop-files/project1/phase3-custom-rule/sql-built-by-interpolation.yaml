@@ -1,0 +1,20 @@
+rules:
+  - id: docutrust-sql-built-by-interpolation
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      SQL statement built by string interpolation or concatenation. The value is
+      embedded in the statement text, so it is parsed as SQL rather than treated
+      as data. Use a parameterized query (a placeholder such as $1) and pass the
+      value in a separate array instead.
+    metadata:
+      category: security
+      cwe: ["CWE-89: Improper Neutralization of Special Elements used in an SQL Command"]
+      owasp: ["A03:2021 - Injection"]
+      confidence: HIGH
+    patterns:
+      - pattern-either:
+          - pattern: '`...${$X}...`'
+          - pattern: '"$A" + $B'
+          - pattern: '$A + "$B"'
+      - pattern-regex: (?is)\b(select|insert|update|delete|replace)\b\s
