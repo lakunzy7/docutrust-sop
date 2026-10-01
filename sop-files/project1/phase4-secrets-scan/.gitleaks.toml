@@ -1,0 +1,29 @@
+# Gitleaks configuration for DocuTrust.
+#
+# This extends the default ruleset rather than replacing it, so every built-in
+# rule still runs. It adds one rule, and the reason is a deliberate omission in
+# the default config -- see the walkthrough, section 4.1.
+#
+# Gitleaks' built-in aws-access-token rule carries an allowlist:
+#
+#     [[rules.allowlists]]
+#     regexes = ['''.+EXAMPLE$''']
+#
+# That suppresses AWS's own documentation placeholders, which is defensible as a
+# default: it stops every repository containing AWS's docs from reporting a fake
+# finding. But it also means the default configuration is blind, by design, to
+# exactly the credential shape this repository contains -- so a scan with the
+# default config reports nothing at all, and proves nothing.
+#
+# The rule below matches that suppressed shape and nothing else, so it fills the
+# gap without duplicating the built-in rule on real keys. A real AWS key is
+# still reported once, by aws-access-token.
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "aws-access-key-id-including-placeholders"
+description = "AWS access key ID ending in EXAMPLE, which the default allowlist suppresses."
+regex = '''\b(?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{9}EXAMPLE\b'''
+keywords = ["akia", "asia", "a3t", "abia", "acca"]
