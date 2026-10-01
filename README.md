@@ -31,6 +31,7 @@ hand.
 | `sop-files/project1/phase3-custom-rule/source-dependency.js` | 3.4 | Two structurally identical injections differing only in where the value comes from. Run against `p/expressjs` it yields one finding; against the custom rule, two. This is the demonstration that the custom rule is not a duplicate of the registry rule. |
 | `sop-files/project1/phase4-secrets-scan/.gitleaks.toml` | 4.2 | Gitleaks configuration. Extends the default ruleset rather than replacing it, and adds one rule for AWS key IDs ending in `EXAMPLE` — the shape Gitleaks' built-in `aws-access-token` rule allowlists, and which this repository deliberately contains. Without it a default scan of DocuTrust reports nothing at all. |
 | `sop-files/project1/phase5-live-verification/verify-key.js` | 5.2 | The live verification. Makes a real, signed `sts:GetCallerIdentity` call with the scanned key and reports whether it is an active credential or an inert placeholder. Credentials are passed explicitly so the result is attributable to the key under test rather than to anything already present on the machine. |
+| `sop-files/project1/phase6-remediation/escapeHtml.js` | 6.4 | The XSS fix. Escapes the five characters that carry structural meaning in HTML, so a document title containing a `<script>` tag is delivered as text rather than executed. Hand-written rather than pulled from npm: a package here would put a dependency into DocuTrust's tree that Project 1 introduced, and that tree is what Project 2 measures. |
 
 ## Why these are separate from the repository
 
