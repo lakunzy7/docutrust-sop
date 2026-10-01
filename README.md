@@ -30,6 +30,7 @@ hand.
 | `sop-files/project1/phase3-custom-rule/generalization-cases.js` | 3.3 | Nine functions: five SQL injections in shapes that appear nowhere in DocuTrust, and four safe forms that must not be reported. The rule's evaluation criterion is whether it catches all five and none of the four. |
 | `sop-files/project1/phase3-custom-rule/source-dependency.js` | 3.4 | Two structurally identical injections differing only in where the value comes from. Run against `p/expressjs` it yields one finding; against the custom rule, two. This is the demonstration that the custom rule is not a duplicate of the registry rule. |
 | `sop-files/project1/phase4-secrets-scan/.gitleaks.toml` | 4.2 | Gitleaks configuration. Extends the default ruleset rather than replacing it, and adds one rule for AWS key IDs ending in `EXAMPLE` — the shape Gitleaks' built-in `aws-access-token` rule allowlists, and which this repository deliberately contains. Without it a default scan of DocuTrust reports nothing at all. |
+| `sop-files/project1/phase5-live-verification/verify-key.js` | 5.2 | The live verification. Makes a real, signed `sts:GetCallerIdentity` call with the scanned key and reports whether it is an active credential or an inert placeholder. Credentials are passed explicitly so the result is attributable to the key under test rather than to anything already present on the machine. |
 
 ## Why these are separate from the repository
 
