@@ -37,6 +37,12 @@ hand.
 | `sop-files/project1/phase7-ci-gate/.gitleaksignore` | 7.3 | The two findings the gate accepts, as fingerprints (`file:rule:line`). Not Gitleaks' JSON baseline, which carries a `Secret` field — committing that would write the credential into the repository to record that the credential is known. |
 | `sop-files/project1/phase7-ci-gate/reports.js` | 7.7 | The seeded violation. A fresh SQL concatenation in a new file, written after the Phase 6 fix and never merged. Deliberately not wired into `src/index.js`, so nothing can reach it; the scanner reads files, not routes. |
 
+## Project 2 — SCA, Dependency Confusion Defense and OpenSSF Scorecard
+
+| File | Walkthrough section | What it is |
+|---|---|---|
+| `sop-files/project2/phase3-policy/DEPENDENCY-POLICY.md` | 3.5 | The written dependency policy. Two severity thresholds — production fails at **moderate**, the complete tree fails at **high** — each with its exact `npm audit` command. Also carries the exception register: seven required fields, a 30-day maximum, a named approver, and the rule that an expired entry is void whether or not anyone remembered to remove it. The thresholds are checkable; "use good judgment" is not a policy. |
+
 ## Why these are separate from the repository
 
 The DocuTrust repository is the **environment** — the application, the workflow that scans
