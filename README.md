@@ -42,6 +42,9 @@ hand.
 | File | Walkthrough section | What it is |
 |---|---|---|
 | `sop-files/project2/phase3-policy/DEPENDENCY-POLICY.md` | 3.5 | The written dependency policy. Two severity thresholds — production fails at **moderate**, the complete tree fails at **high** — each with its exact `npm audit` command. Also carries the exception register: seven required fields, a 30-day maximum, a named approver, and the rule that an expired entry is void whether or not anyone remembered to remove it. The thresholds are checkable; "use good judgment" is not a policy. |
+| `sop-files/project2/phase3-policy/ci.yml` | 3.5 | The workflow with the `sca` job added. `npm ci` runs first and that ordering is load-bearing: `npm audit` exits 1 with `ENOLOCK` on a tree with no lockfile, the same exit code it uses for a finding, so without it a missing lockfile would be indistinguishable from an advisory. Both thresholds from the policy then run, which is what makes them thresholds rather than descriptions. |
+| `sop-files/project2/phase4-supply-chain/.npmrc` | 4.4 | The dependency confusion defence, in one line: the org-owned `@docutrust` scope resolves from GitHub Packages and nowhere else. The value this file must never carry is `registry.npmjs.org` — pinning an org scope to the public registry would not be the control, it would be the vulnerability, because a public package taking an internal name is precisely the attack. |
+| `sop-files/project2/phase4-supply-chain/demo.npmrc` | 4.5 | The same rule applied to a scope whose package, `@babel/core`, genuinely exists on the public registry — so that "npm did not fall back" is something you watch happen rather than something you take on trust. Without a package that really is publicly available, a refused install proves only that something went wrong. |
 
 ## Why these are separate from the repository
 
