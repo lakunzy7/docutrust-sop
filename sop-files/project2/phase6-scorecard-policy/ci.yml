@@ -1,0 +1,177 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build image
+        run: docker build -t docutrust:ci-${{ github.sha }} .
+
+  # Added by Project 1. This is the enforcement half of the SAST and secrets
+  # work: Phases 2 to 4 produce the scans, and this is what refuses a change
+  # that introduces a finding. A report nobody acts on is a report, not a gate.
+  #
+  # Both scanners run pinned versions, the same ones the walkthrough installs,
+  # so a green run here means the same thing as a green run on a workstation.
+  sast-and-secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # gitleaks reads history, not just the working tree
+
+      - name: SAST - Semgrep
+        # The pinned image rather than pipx. The runner images set
+        # PIPX_BIN_DIR=/opt/pipx_bin and keep venvs under /opt/pipx, so a
+        # pipx install lands somewhere other than where it is looked for.
+        # The image sidesteps that and pins the version at the same time.
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src semgrep/semgrep:1.173.0 \
+            semgrep scan --config=p/expressjs --config=semgrep/ --error src/
+
+      - name: Install Gitleaks
+        # Downloaded, checksum-verified, then installed -- the same sequence
+        # Section 0.7 walks through, for the same reason: a security tool
+        # fetched over the network is not run before its hash is checked.
+        run: |
+          cd /tmp
+          curl -fsSLO https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          curl -fsSLO https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_checksums.txt
+          sha256sum -c --ignore-missing gitleaks_8.30.1_checksums.txt
+          tar -xzf gitleaks_8.30.1_linux_x64.tar.gz gitleaks
+          sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
+
+      - name: Secrets - Gitleaks
+        # .gitleaksignore carries the fingerprints of the two findings this
+        # repository already documents -- the seeded placeholder in
+        # src/config.js and its quotation in README.md. They are known,
+        # accepted, and verified inert in Section 5.2. Anything not in that
+        # file is new, and new is what this stage refuses.
+        run: gitleaks git . --redact
+
+  # Added by Project 2, Phase 3. This is the enforcement half of
+  # DEPENDENCY-POLICY.md. The thresholds in that document are only thresholds
+  # because this job refuses the merge; without it they are a description of a
+  # bar nobody is held to.
+  #
+  # Both commands are npm's own audit. Nothing is downloaded and no scanner is
+  # installed, so this stage adds no dependency to the tree it is judging --
+  # which matters, because a scanner fetching its own packages would be
+  # widening the surface it exists to measure.
+  sca:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        # npm ci runs first, and the ordering is load-bearing rather than
+        # conventional. npm audit requires a lockfile and exits 1 with ENOLOCK
+        # when there is none -- the same exit code it uses for a found
+        # vulnerability. With this step in place a failure below means an
+        # advisory; without it, a missing lockfile would look identical.
+        run: npm ci
+
+      - name: SCA - production dependencies (moderate and above)
+        # The tighter bar, on the tree that ships and runs. An advisory here is
+        # reachable by anyone who can reach the application.
+        run: npm audit --omit=dev --audit-level=moderate
+
+      - name: SCA - complete tree (high and above)
+        # The development tree is not exempt: it executes on this runner, and
+        # this runner holds the credentials that deploy. But it is deeper, and
+        # it does not ship, so its bar is high rather than moderate.
+        run: npm audit --audit-level=high
+
+  # Added by Project 2, Phase 6. This is the enforcement half of
+  # SCORECARD-POLICY.md.
+  #
+  # This is the only stage in the pipeline that scores code we do not own.
+  # Every other job asks a question about DocuTrust; this one asks it about the
+  # projects DocuTrust is built on -- because a dependency we cannot patch is a
+  # risk we can only decline to take.
+  #
+  # It reads the dependency list from package.json rather than naming packages
+  # here. That is what makes it a gate on *new* dependencies: a package added
+  # in a pull request is scored by this job without anyone editing the job.
+  dependency-scorecard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Scorecard
+        # The same download-verify-install sequence the Gitleaks stage uses,
+        # for the same reason. Note the checksum file is scorecard_checksums.txt
+        # and not the version-stamped name it looks like it should be.
+        run: |
+          cd /tmp
+          curl -fsSLO https://github.com/ossf/scorecard/releases/download/v5.5.0/scorecard_5.5.0_linux_amd64.tar.gz
+          curl -fsSLO https://github.com/ossf/scorecard/releases/download/v5.5.0/scorecard_checksums.txt
+          sha256sum -c --ignore-missing scorecard_checksums.txt
+          tar -xzf scorecard_5.5.0_linux_amd64.tar.gz scorecard
+          sudo install -m 0755 scorecard /usr/local/bin/scorecard
+
+      - name: Score every declared dependency
+        # A token is required, and both halves of that were measured rather
+        # than assumed.
+        #
+        # Unauthenticated: a run against a single dependency did not finish
+        # within four minutes.
+        #
+        # With the workflow's own token: @jazzer.js/core scored 5.8, matching
+        # the workstation to the decimal -- and the run then aborted on express
+        # with "some github tokens can't read classic branch protection rules".
+        # Reading branch protection on a repository we do not own is an
+        # administrative request, and GitHub does not grant it to this token.
+        # Scorecard treats a check it cannot read as fatal, so it exits 1
+        # rather than scoring the package over the checks it could read.
+        #
+        # That refusal is the behaviour worth having. The alternative is a
+        # number computed from a different set of checks here than the number
+        # SCORECARD-POLICY.md's floor was measured against, and a threshold
+        # that means one thing on a workstation and another in the pipeline is
+        # worse than one that declines to run.
+        #
+        # So SCORECARD_TOKEN must be a classic personal access token with the
+        # public_repo scope. The fallback is kept deliberately: a repository
+        # that has not set the secret should fail loudly here, not quietly
+        # score something weaker.
+        env:
+          GITHUB_AUTH_TOKEN: ${{ secrets.SCORECARD_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          FLOOR=5.0
+          for pkg in $(jq -r '.dependencies + .devDependencies | keys[]' package.json); do
+            echo "Scoring $pkg"
+            scorecard --npm="$pkg" --format=json -o /tmp/scorecard-check.json
+            jq -r '"\(.repo.name) -> \(.score)"' /tmp/scorecard-check.json
+            if jq -e --argjson f "$FLOOR" '.score < $f' /tmp/scorecard-check.json > /dev/null; then
+              echo "::error::$pkg falls below the $FLOOR floor in SCORECARD-POLICY.md"
+              exit 1
+            fi
+          done
+
+  # Everything below this line is still a deliberate placeholder. Each
+  # remaining project in this track adds its own real stage here: signing and
+  # provenance in Projects 4-5, and so on. Wiring a stage in before its project
+  # is reached would pre-solve the work rather than do it.
