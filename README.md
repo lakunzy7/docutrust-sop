@@ -52,7 +52,7 @@ hand.
 
 | File | Walkthrough section | What it is |
 |---|---|---|
-| `sop-files/project3/phase1-reintroduction/documents.js` | 1.2 | The route file with both seeded vulnerabilities **restored** — the state this entire project tests against. Project 1's fixes are deliberately gone: the search query is back to raw string concatenation, so the search term is parsed as SQL, and the render endpoint writes `title` and `body` straight into HTML with nothing between them and the browser. Project 1's fix comments and the `escapeHtml` import go with them, because a file that claims a fix it no longer contains is worse than an untidy one. **The walkthrough gives both edits themselves and this file is the escape hatch** — which line is the vulnerability is the whole lesson of the phase, so copying it is skipping the point, not reaching it faster. |
+| `sop-files/project3/phase1-reintroduction/documents.js` | 1.5 | The route file with both seeded vulnerabilities **restored** — the state this entire project tests against. Project 1's fixes are deliberately gone: the search query is back to raw string concatenation, so the search term is parsed as SQL, and the render endpoint writes `title` and `body` straight into HTML with nothing between them and the browser. Project 1's fix comments and the `escapeHtml` import go with them, because a file that claims a fix it no longer contains is worse than an untidy one. **The walkthrough gives both edits themselves and this file is the escape hatch** — which line is the vulnerability is the whole lesson of the phase, so copying it is skipping the point, not reaching it faster. |
 
 ## Why these are separate from the repository
 
