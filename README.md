@@ -48,6 +48,12 @@ hand.
 | `sop-files/project2/phase6-scorecard-policy/SCORECARD-POLICY.md` | 6.2 | The Scorecard-driven policy: a floor of **5.0** on the upstream project behind every declared dependency. The number was measured, not chosen — the five packages this repository already declares score between 5.4 and 8.3 — and §6 states plainly that DocuTrust's own score of 2.9 would fail it, and why that asymmetry is deliberate rather than an oversight. §3 records what Scorecard cannot see, including its SAST check's blindness to Semgrep. |
 | `sop-files/project2/phase6-scorecard-policy/ci.yml` | 6.3 | The workflow with the `dependency-scorecard` job added, alongside the earlier `build-and-test`, `sast-and-secrets` and `sca` jobs. It reads the dependency list from `package.json` rather than naming packages in the job, which is what makes it a gate on *new* dependencies. Scorecard is downloaded and checksum-verified the way Gitleaks is, and the job needs a token — measured, because an unauthenticated run did not finish in four minutes. |
 
+## Project 3 — DAST, IAST and RASP, Compared for Real
+
+| File | Walkthrough section | What it is |
+|---|---|---|
+| `sop-files/project3/phase1-reintroduction/documents.js` | 1.2 | The route file with both seeded vulnerabilities **restored** — the state this entire project tests against. Project 1's fixes are deliberately gone: the search query is back to raw string concatenation, so the search term is parsed as SQL, and the render endpoint writes `title` and `body` straight into HTML with nothing between them and the browser. Project 1's fix comments and the `escapeHtml` import go with them, because a file that claims a fix it no longer contains is worse than an untidy one. **The walkthrough gives both edits themselves and this file is the escape hatch** — which line is the vulnerability is the whole lesson of the phase, so copying it is skipping the point, not reaching it faster. |
+
 ## Why these are separate from the repository
 
 The DocuTrust repository is the **environment** — the application, the workflow that scans
